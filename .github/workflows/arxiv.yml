@@ -4,17 +4,17 @@ on:
   schedule:
     - cron: '50 0 * * 1,2,3,4,5'  # UTC
   workflow_dispatch:
-  
+
 jobs:
   arXiv:
-  
+
     runs-on: ubuntu-latest
-    
+
     steps:
-    
+
       - name: Checkout
         uses: actions/checkout@v2
-        
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -30,3 +30,4 @@ jobs:
         env:
           WEBHOOK_HEP_TH: ${{ secrets.WEBHOOK_HEP_TH }}
           WEBHOOK_HEP_PH: ${{ secrets.WEBHOOK_HEP_PH }}
+          WEBHOOK_HEP_LAT: ${{ secrets.WEBHOOK_HEP_LAT }}
