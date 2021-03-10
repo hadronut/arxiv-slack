@@ -4,3 +4,6 @@
 
 - category: "hep-ph"
   webhook_url_name: "WEBHOOK_HEP_PH"
+
+- category: "hep-lat"
+  webhook_url_name: "WEBHOOK_HEP_LAT"
