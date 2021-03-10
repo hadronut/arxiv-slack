@@ -1,0 +1,6 @@
+- category: "hep-th"
+  # Add an incoming webhook URL to GitHub secret with this name
+  webhook_url_name: "WEBHOOK_HEP_TH"
+
+- category: "hep-ph"
+  webhook_url_name: "WEBHOOK_HEP_PH"
