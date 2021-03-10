@@ -8,7 +8,7 @@ from slackweb import Slack
 
 
 def _truncate_authors(authors: list, limit=2) -> list:
-    return authors if len(authors) < limit else authors[:limit] + ["..."]
+    return authors if len(authors) <= limit else authors[:limit] + ["..."]
 
 
 def _arxiv_url_to_id(url: str) -> str:
