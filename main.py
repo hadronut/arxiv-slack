@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import re
 
@@ -62,7 +63,7 @@ def feed_to_post(feed) -> str:
     return f"[<{url}|{identifier}>] {title} ({authors})"
 
 
-def notify_slack(text: str, webhook_url_name: str):
+def notify_slack(text: str, webhook_url_name: str, print_log=True):
     """
     Notify slack the given text.
 
@@ -77,10 +78,14 @@ def notify_slack(text: str, webhook_url_name: str):
     __webhook_url = os.getenv(webhook_url_name)
     if __webhook_url is None:
         raise ValueError(f"{webhook_url_name} not found in env variable")
+    if print_log:
+        logging.info(f"@{{{webhook_url_name}}} {text}")
     Slack(url=__webhook_url).notify(text=text)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     date = datetime.date.today() - datetime.timedelta(days=2)
     config_file = os.path.dirname(os.path.abspath(__file__)) + "/config.yml"
 
