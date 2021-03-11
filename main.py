@@ -81,13 +81,13 @@ def notify_slack(text: str, webhook_url_name: str):
 
 
 if __name__ == "__main__":
-    date = datetime.date.today() - datetime.timedelta(days=1)
+    date = datetime.date.today() - datetime.timedelta(days=2)
     config_file = os.path.dirname(os.path.abspath(__file__)) + "/config.yml"
 
     with open(config_file) as f:
         # `config` is something like:
-        # [{'category': 'hep-th', 'webhook_url': 'WEBHOOK_HEP_TH'},
-        #  {'category': 'hep-ph', 'webhook_url': 'WEBHOOK_HEP_PH'}]
+        # [{'category': 'hep-th', 'webhook_url_name': 'WEBHOOK_HEP_TH'},
+        #  {'category': 'hep-ph', 'webhook_url_name': 'WEBHOOK_HEP_PH'}]
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     for item in config:
