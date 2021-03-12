@@ -7,3 +7,6 @@
 
 - category: "hep-lat"
   webhook_url_name: "WEBHOOK_HEP_LAT"
+
+- category: "nucl-th"
+  webhook_url_name: "WEBHOOK_NUCL_TH"
