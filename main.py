@@ -98,5 +98,7 @@ if __name__ == "__main__":
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     for item in config:
+        if not item.get("enable", True):
+            continue
         for feed in fetch_paper_feeds(category=item["category"], date=date):
             notify_slack(feed_to_post(feed), item["webhook_url_name"])
