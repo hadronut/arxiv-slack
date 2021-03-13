@@ -36,7 +36,7 @@ def fetch_paper_feeds(category: str, date: datetime.date) -> list:
     yyyymmdd = date.strftime("%Y%m%d")
     query = f"cat:{category} AND submittedDate:[{yyyymmdd}000000 TO {yyyymmdd}235959]"
     logging.info(f"arXiv query: {query}")
-    feeds = arxiv.query(query, sort_by="submittedDate")
+    feeds = arxiv.query(query, sort_by="submittedDate", max_results=1000)
     # Remove cross-lists
     feeds = filter(
         lambda feed: re.match(category, feed.arxiv_primary_category["term"]), feeds
