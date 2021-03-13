@@ -5,6 +5,7 @@ import re
 
 import arxiv
 import yaml
+from pandas.tseries.offsets import BDay
 from slackweb import Slack
 
 
@@ -33,10 +34,9 @@ def fetch_paper_feeds(category: str, date: datetime.date) -> list:
         Feeds of arXiv articles.
     """
     yyyymmdd = date.strftime("%Y%m%d")
-    feeds = arxiv.query(
-        f"cat:{category} AND submittedDate:[{yyyymmdd}000000 TO {yyyymmdd}235959]",
-        sort_by="submittedDate",
-    )
+    query = f"cat:{category} AND submittedDate:[{yyyymmdd}000000 TO {yyyymmdd}235959]"
+    logging.info(f"arXiv query: {query}")
+    feeds = arxiv.query(query, sort_by="submittedDate")
     # Remove cross-lists
     feeds = filter(
         lambda feed: re.match(category, feed.arxiv_primary_category["term"]), feeds
@@ -65,7 +65,7 @@ def feed_to_post(feed) -> str:
     return f"[<{url}|{identifier}>] {title} ({authors})"
 
 
-def notify_slack(text: str, webhook_url_name: str, print_log=True):
+def notify_slack(text: str, webhook_url_name: str):
     """
     Notify slack the given text.
 
@@ -76,19 +76,18 @@ def notify_slack(text: str, webhook_url_name: str, print_log=True):
     - webhook_url_name : str
         The name of the environment variale that stores the incoming webhook URL.
     """
-    # The content of __webhook_url is confidential.  Do not compromise it.
-    __webhook_url = os.getenv(webhook_url_name)
-    if __webhook_url is None:
-        raise ValueError(f"{webhook_url_name} not found in env variable")
-    if print_log:
-        logging.info(f"@{{{webhook_url_name}}} {text}")
-    Slack(url=__webhook_url).notify(text=text)
+    # Caution: Slack incoming webhook URL is confidential. Do not compromise it.
+    if os.getenv(webhook_url_name) is None:
+        raise ValueError(f"{webhook_url_name} is not found in environment variables.")
+    logging.info(f"@{{{webhook_url_name}}} {text}")
+    Slack(url=os.getenv(webhook_url_name)).notify(text=text)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    date = datetime.date.today() - datetime.timedelta(days=2)
+    # arXiv API has a one-day delay
+    date = datetime.date.today() - BDay(2)
     config_file = os.path.dirname(os.path.abspath(__file__)) + "/config.yml"
 
     with open(config_file) as f:
