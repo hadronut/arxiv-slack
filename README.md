@@ -6,5 +6,5 @@
 
 1. Fork this repository.
 2. Add `category` and corresponding `webhook_url_name` to config.yml.
-3. Add [incoming webhook URL](https://api.slack.com/messaging/webhooks) to [GitHub repository secret](https://docs.github.com/en/actions/reference/encrypted-secrets) with the name of `webhook_url_name`.
+3. Add an [incoming webhook URL](https://api.slack.com/messaging/webhooks) to [GitHub repository secret](https://docs.github.com/en/actions/reference/encrypted-secrets) with the name of `webhook_url_name`.
 4. Add the secret to .github/workflows/arxiv.yml.
