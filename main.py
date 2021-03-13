@@ -38,7 +38,9 @@ def fetch_paper_feeds(category: str, date: datetime.date) -> list:
         sort_by="submittedDate",
     )
     # Remove cross-lists
-    feeds = filter(lambda feed: feed.arxiv_primary_category["term"] == category, feeds)
+    feeds = filter(
+        lambda feed: re.match(category, feed.arxiv_primary_category["term"]), feeds
+    )
     return feeds
 
 
