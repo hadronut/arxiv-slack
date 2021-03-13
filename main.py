@@ -38,7 +38,9 @@ def fetch_paper_feeds(category: str, date: datetime.date) -> list:
     logging.info(f"arXiv query: {query}")
     feeds = arxiv.query(query, sort_by="submittedDate")
     # Remove cross-lists
-    feeds = filter(lambda feed: feed.arxiv_primary_category["term"] == category, feeds)
+    feeds = filter(
+        lambda feed: re.match(category, feed.arxiv_primary_category["term"]), feeds
+    )
     return feeds
 
 
@@ -95,5 +97,7 @@ if __name__ == "__main__":
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     for item in config:
+        if not item.get("enable", True):
+            continue
         for feed in fetch_paper_feeds(category=item["category"], date=date):
             notify_slack(feed_to_post(feed), item["webhook_url_name"])
