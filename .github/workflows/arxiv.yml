@@ -30,3 +30,4 @@ jobs:
           WEBHOOK_HEP_PH: ${{ secrets.WEBHOOK_HEP_PH }}
           WEBHOOK_HEP_LAT: ${{ secrets.WEBHOOK_HEP_LAT }}
           WEBHOOK_NUCL_TH: ${{ secrets.WEBHOOK_NUCL_TH }}
+          WEBHOOK_Q_FIN: ${{ secrets.WEBHOOK_Q_FIN }}
