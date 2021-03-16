@@ -1,4 +1,4 @@
-name: arXiv
+name: hep-ph
 
 on:
   schedule:

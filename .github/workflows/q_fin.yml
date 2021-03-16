@@ -1,4 +1,4 @@
-name: arXiv
+name: q-fin
 
 on:
   schedule:
