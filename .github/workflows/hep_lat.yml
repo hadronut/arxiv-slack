@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  WEBHOOK: ${{ secrets.WEBHOOK_HEP_TH }}
-  CATEGORY: 'hep-th'
+  WEBHOOK: ${{ secrets.WEBHOOK_HEP_LAT }}
+  CATEGORY: 'hep-lat'
 
 jobs:
   arXiv:
