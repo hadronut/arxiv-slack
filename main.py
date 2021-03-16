@@ -1,11 +1,9 @@
 import argparse
 import datetime
 import logging
-import os
 import re
 
 import arxiv
-import yaml
 from pandas.tseries.offsets import BDay
 from slackweb import Slack
 from tenacity import retry
