@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import logging
 import os
@@ -70,7 +71,7 @@ def feed_to_post(feed) -> str:
 
 
 @retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
-def notify_slack(text: str, webhook_url_name: str):
+def notify_slack(text: str, url: str):
     """
     Notify slack the given text.
 
@@ -78,31 +79,25 @@ def notify_slack(text: str, webhook_url_name: str):
     ----------
     - text : str
         Text to notify.
-    - webhook_url_name : str
+    - url: str
         The name of the environment variale that stores the incoming webhook URL.
+        Caution: This URL is confidential. Do not compromise it.
     """
-    # Caution: Slack incoming webhook URL is confidential. Do not compromise it.
-    if os.getenv(webhook_url_name) is None:
-        raise ValueError(f"{webhook_url_name} is not found in environment variables.")
-    logging.info(f"@{{{webhook_url_name}}} {text}")
-    Slack(url=os.getenv(webhook_url_name)).notify(text=text)
+    logging.info(f"Slack: {text}")
+    Slack(url=url).notify(text=text)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    # arXiv API has a one-day delay
-    date = datetime.date.today() - BDay(2)
-    config_file = os.path.dirname(os.path.abspath(__file__)) + "/config.yml"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-w", "--webhook", required=True)
+    parser.add_argument("-c", "--category", required=True)
+    parser.add_argument("-d", "--delay", default=2)
+    args = parser.parse_args()
 
-    with open(config_file) as f:
-        # `config` is something like:
-        # [{'category': 'hep-th', 'webhook_url_name': 'WEBHOOK_HEP_TH'},
-        #  {'category': 'hep-ph', 'webhook_url_name': 'WEBHOOK_HEP_PH'}]
-        config = yaml.load(f)
+    # Note: arXiv API has a one-day delay
+    date = datetime.date.today() - BDay(args.delay)
 
-    for item in config:
-        if not item.get("enable", True):
-            continue
-        for feed in fetch_paper_feeds(category=item["category"], date=date):
-            notify_slack(feed_to_post(feed), item["webhook_url_name"])
+    for feed in fetch_paper_feeds(category=args.category, date=date):
+        notify_slack(feed_to_post(feed), args.webhook)

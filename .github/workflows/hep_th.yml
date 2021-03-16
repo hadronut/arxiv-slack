@@ -1,0 +1,31 @@
+name: arXiv
+
+on:
+  schedule:
+    - cron: '0 23 * * 1,2,3,4,5'  # UTC
+  workflow_dispatch:
+
+env:
+  WEBHOOK: ${{ secrets.WEBHOOK_HEP_TH }}
+  CATEGORY: 'hep-th'
+
+jobs:
+  arXiv:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install requirements
+        run: python3 -m pip install -r requirements.txt
+
+      - name: Run main.py
+        run: python3 main.py --webhook $WEBHOOK --category $CATEGORY
