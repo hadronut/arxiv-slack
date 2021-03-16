@@ -7,6 +7,9 @@ import arxiv
 import yaml
 from pandas.tseries.offsets import BDay
 from slackweb import Slack
+from tenacity import retry
+from tenacity import stop_after_attempt
+from tenacity import wait_fixed
 
 
 def _truncate_authors(authors: list, limit=2) -> list:
@@ -17,6 +20,7 @@ def _arxiv_url_to_id(url: str) -> str:
     return re.match(r"http\://arxiv\.org/abs/(\d{4}\.\d{5})[v\d+]?", url).group(1)
 
 
+@retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
 def fetch_paper_feeds(category: str, date: datetime.date) -> list:
     """
     Fetch paper feeds in the specified category and date.
@@ -65,6 +69,7 @@ def feed_to_post(feed) -> str:
     return f"[<{url}|{identifier}>] {title} ({authors})"
 
 
+@retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
 def notify_slack(text: str, webhook_url_name: str):
     """
     Notify slack the given text.
@@ -94,7 +99,7 @@ if __name__ == "__main__":
         # `config` is something like:
         # [{'category': 'hep-th', 'webhook_url_name': 'WEBHOOK_HEP_TH'},
         #  {'category': 'hep-ph', 'webhook_url_name': 'WEBHOOK_HEP_PH'}]
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+        config = yaml.load(f)
 
     for item in config:
         if not item.get("enable", True):
