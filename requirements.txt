@@ -1,5 +1,4 @@
 arxiv
 pandas
-pyyaml
 slackweb
 tenacity
