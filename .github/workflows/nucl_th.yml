@@ -28,4 +28,4 @@ jobs:
         run: python3 -m pip install -r requirements.txt
 
       - name: Run main.py
-        run: python3 main.py --webhook $WEBHOOK --category $CATEGORY
+        run: python3 main.py --webhook $WEBHOOK --category $CATEGORY --delay 1

@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--webhook", required=True)
     parser.add_argument("-c", "--category", required=True)
-    parser.add_argument("-d", "--delay", default=2)
+    parser.add_argument("-d", "--delay", default=2, type=int)
     args = parser.parse_args()
 
     # Note: arXiv API has a one-day delay
