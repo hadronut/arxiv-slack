@@ -2,7 +2,7 @@ name: q-fin
 
 on:
   schedule:
-    - cron: '0 23 * * 1,2,3,4,5'  # UTC
+    - cron: '0 23 * * 0,1,2,3,4'  # 23:00 Sun-Thu (UTC) = 8:00 Mon-Fri (JST)
   workflow_dispatch:
 
 env:
