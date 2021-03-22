@@ -82,7 +82,7 @@ def get_submitted_date_range(announced_date: date) -> (datetime, datetime):
     return (datetime_b, datetime_e)
 
 
-@retry(wait=wait_fixed(1), stop=stop_after_attempt(5))
+@retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
 def fetch_paper_feeds(category: str, announced_date: date) -> list:
     """
     Fetch paper feeds in the specified category and date.
@@ -133,7 +133,7 @@ def feed_to_post(feed) -> str:
     return f"[<{url}|{identifier}>] {title} ({authors})"
 
 
-@retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
+@retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
 def notify_slack(text: str, url: str):
     """
     Notify slack the given text.
@@ -154,9 +154,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--category", required=True)
     parser.add_argument("-d", "--date", required=True)
     parser.add_argument("-w", "--webhook", required=True)
-    parser.add_argument("-c", "--category", required=True)
     args = parser.parse_args()
 
     posted_date = datetime.strptime(args.date, "%Y%m%d")
