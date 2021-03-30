@@ -3,13 +3,23 @@ import logging
 import re
 from datetime import date
 from datetime import datetime
+from datetime import time
+from datetime import timedelta
+from datetime import timezone
+from datetime import tzinfo
 
 import arxiv
-from pandas.tseries.offsets import BDay
+from pandas.tseries.offsets import BusinessDay
 from slackweb import Slack
 from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
+
+__version__ = "0.0.32"
+
+UTC = timezone.utc
+JST = timezone(timedelta(hours=9), "JST")
+EST = timezone(timedelta(hours=-5), "EST")
 
 
 def _truncate_authors(authors: list, limit=2) -> list:
@@ -20,70 +30,92 @@ def _arxiv_url_to_id(url: str) -> str:
     return re.match(r"http\://arxiv\.org/abs/(\d{4}\.\d{5})[v\d+]?", url).group(1)
 
 
-def get_announced_date(posted_date: date, delay=1):
+def latest_announced_date(now: datetime) -> datetime:
     """
-    ...
+    Ignores summer time
 
-    Parameters
-    ----------
-    - posted_date : date
-        Posted date in UTC.
+    >>> now = datetime(2021, 1, 11, 8, 0, tzinfo=JST)
+    >>> latest_announced_date(now).astimezone(JST).isoformat()
+    '2021-01-08T10:00:00+09:00'
 
-    Examples
-    --------
-    >>> get_announced_date(date(2020, 1, 5))   # Sun -> Thu
-    Timestamp('2020-01-03 00:00:00')
-    >>> get_announced_date(date(2020, 1, 6))   # Mon -> Fri
-    Timestamp('2020-01-03 00:00:00')
-    >>> get_announced_date(date(2020, 1, 7))   # Tue -> Mon
-    Timestamp('2020-01-06 00:00:00')
-    >>> get_announced_date(date(2020, 1, 8))   # Wed -> Tue
-    Timestamp('2020-01-07 00:00:00')
-    >>> get_announced_date(date(2020, 1, 9))   # Thu -> Wed
-    Timestamp('2020-01-08 00:00:00')
+    >>> now = datetime(2021, 1, 12, 8, 0, tzinfo=JST)
+    >>> latest_announced_date(now).astimezone(JST).isoformat()
+    '2021-01-11T10:00:00+09:00'
+
+    >>> now = datetime(2021, 1, 13, 8, 0, tzinfo=JST)
+    >>> latest_announced_date(now).astimezone(JST).isoformat()
+    '2021-01-12T10:00:00+09:00'
+
+    >>> now = datetime(2021, 1, 14, 8, 0, tzinfo=JST)
+    >>> latest_announced_date(now).astimezone(JST).isoformat()
+    '2021-01-13T10:00:00+09:00'
+
+    >>> now = datetime(2021, 1, 15, 8, 0, tzinfo=JST)
+    >>> latest_announced_date(now).astimezone(JST).isoformat()
+    '2021-01-14T10:00:00+09:00'
     """
-    if posted_date.isoweekday() == 0:
-        # Sun -> Thu
-        return posted_date - BDay(2)
-    else:
-        return posted_date - BDay(1)
+    d = now.astimezone(EST)
+    if d.time() < time(20, 0):
+        d -= timedelta(days=1)
+    while d.isoweekday() in (5, 6):  # Fri or Sat -> Thu
+        d -= timedelta(days=1)
+    return datetime(d.year, d.month, d.day, 20, 0, tzinfo=EST)
 
 
 def get_submitted_date_range(announced_date: date) -> (datetime, datetime):
     """
+    Get the submitted date ranges of the papers which are announced at
+    20:00 of `annouced_date` (EST).
+
+    cf.
     https://arxiv.org/help/availability
 
-    Parameters
-    ----------
-    - announced_date : date
-        Announced date in UTC.
+    Returns
+    -------
+    (submitted_date_begin: date, submitted_date_end: date)
 
     Examples
     --------
-    >>> get_submitted_date_range(date(2021, 1, 6))   # Wed -> Mon - Tue
-    (datetime.datetime(2021, 1, 4, 18, 0), datetime.datetime(2021, 1, 5, 17, 59, 59))
-    >>> get_submitted_date_range(date(2021, 1, 7))   # Thu -> Tue - Wed
-    (datetime.datetime(2021, 1, 5, 18, 0), datetime.datetime(2021, 1, 6, 17, 59, 59))
-    >>> get_submitted_date_range(date(2021, 1, 8))   # Fri -> Wed - Thu
-    (datetime.datetime(2021, 1, 6, 18, 0), datetime.datetime(2021, 1, 7, 17, 59, 59))
-    >>> get_submitted_date_range(date(2021, 1, 11))   # Mon -> Thu - Fri
-    (datetime.datetime(2021, 1, 7, 18, 0), datetime.datetime(2021, 1, 8, 17, 59, 59))
-    >>> get_submitted_date_range(date(2021, 1, 12))   # Tue -> Fri - Mon
-    (datetime.datetime(2021, 1, 8, 18, 0), datetime.datetime(2021, 1, 11, 17, 59, 59))
-    """
-    if announced_date.isoweekday() in (0, 6):
-        raise RuntimeWarning("announced_date is weekend")
+    >>> fmt = lambda b, e: (b.astimezone(EST).isoformat(), e.astimezone(EST).isoformat())
 
-    b = announced_date - BDay(2)
-    e = announced_date - BDay(1)
-    datetime_b = datetime(b.year, b.month, b.day, 18, 0, 0)
-    datetime_e = datetime(e.year, e.month, e.day, 17, 59, 59)
+    >>> b, e = get_submitted_date_range(date(2021, 1, 12))
+    >>> fmt(b, e)
+    ('2021-01-11T14:00:00-05:00', '2021-01-12T13:59:59-05:00')
+
+    >>> b, e = get_submitted_date_range(date(2021, 1, 13))
+    >>> fmt(b, e)
+    ('2021-01-12T14:00:00-05:00', '2021-01-13T13:59:59-05:00')
+
+    >>> b, e = get_submitted_date_range(date(2021, 1, 14))
+    >>> fmt(b, e)
+    ('2021-01-13T14:00:00-05:00', '2021-01-14T13:59:59-05:00')
+
+    >>> b, e = get_submitted_date_range(date(2021, 1, 17))
+    >>> fmt(b, e)
+    ('2021-01-16T14:00:00-05:00', '2021-01-17T13:59:59-05:00')
+
+    >>> b, e = get_submitted_date_range(date(2021, 1, 18))
+    >>> fmt(b, e)
+    ('2021-01-15T14:00:00-05:00', '2021-01-18T13:59:59-05:00')
+    """
+    if announced_date.isoweekday() in (5, 6):
+        raise ValueError
+
+    if announced_date.isoweekday() != 1:
+        b = announced_date - timedelta(1)
+        e = announced_date
+    else:
+        b = announced_date - timedelta(3)
+        e = announced_date
+
+    datetime_b = datetime(b.year, b.month, b.day, 14, 0, 0, tzinfo=EST)
+    datetime_e = datetime(e.year, e.month, e.day, 13, 59, 59, tzinfo=EST)
 
     return (datetime_b, datetime_e)
 
 
 @retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
-def fetch_paper_feeds(category: str, announced_date: date) -> list:
+def fetch_paper_feeds(category, from_datetime, to_datetime) -> list:
     """
     Fetch paper feeds in the specified category and date.
 
@@ -91,17 +123,16 @@ def fetch_paper_feeds(category: str, announced_date: date) -> list:
     ----------
     - category : str
         Subject category to search.
-    - announced_date : date
-        Date to search articles.
+    - from_datetime : datetime
+    - to_datetime : datetime
 
     Returns
     -------
     feeds : list[FeedParserDict]
         Feeds of arXiv articles.
     """
-    b, e = get_submitted_date_range(announced_date)
-
-    query = f"cat:{category} AND submittedDate:[{b.strftime('%Y%m%d%H%M%S')} TO {e.strftime('%Y%m%d%H%M%S')}]"
+    b, e = from_datetime.strftime("%Y%m%d%H%M%S"), to_datetime.strftime("%Y%m%d%H%M%S")
+    query = f"cat:{category} AND submittedDate:[{b} TO {e}]"
     logging.info(f"arXiv query: {query}")
     feeds = arxiv.query(query, sort_by="submittedDate", max_results=1000)
 
@@ -133,34 +164,43 @@ def feed_to_post(feed) -> str:
     return f"[<{url}|{identifier}>] {title} ({authors})"
 
 
-@retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
-def notify_slack(text: str, url: str):
-    """
-    Notify slack the given text.
-
-    Parameters
-    ----------
-    - text : str
-        Text to notify.
-    - url: str
-        The name of the environment variale that stores the incoming webhook URL.
-        Caution: This URL is confidential. Do not compromise it.
-    """
-    logging.info(f"Slack: {text}")
-    Slack(url=url).notify(text=text)
-
-
 if __name__ == "__main__":
+    DELAY = timedelta(days=0)
+
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--category", required=True)
-    parser.add_argument("-d", "--date", required=True)
-    parser.add_argument("-w", "--webhook", required=True)
+    parser.add_argument("-c", "--category", required=True, help="query to specify category")
+    parser.add_argument("-d", "--date", required=False, help="current UTC time in ISO format")
+    parser.add_argument("-w", "--webhook", required=False, help="Slack webhook URL")
     args = parser.parse_args()
 
-    posted_date = datetime.strptime(args.date, "%Y%m%d")
-    announced_date = get_announced_date(posted_date)
+    logging.info(f"version: {__version__}")
+    logging.info(f"Current datetime: {datetime.now(tz=UTC)}")
+    logging.info(f"Current datetime: {datetime.now(tz=JST)}")
 
-    for feed in fetch_paper_feeds(args.category, announced_date):
-        notify_slack(feed_to_post(feed), args.webhook)
+    if args.date is None:
+        posted_date = datetime.now(timezone.utc)
+    else:
+        posted_date = datetime.fromisoformat(args.date + "+00:00")
+
+    announced_date = latest_announced_date(posted_date - DELAY)
+    from_datetime, to_datetime = get_submitted_date_range(announced_date)
+
+    logging.info(f"Posted datetime: {posted_date.astimezone(UTC)}")
+    logging.info(f"Posted datetime: {posted_date.astimezone(JST)}")
+    logging.info(f"Announced datetime: {announced_date.astimezone(UTC)}")
+    logging.info(f"Announced datetime: {announced_date.astimezone(JST)}")
+    logging.info(
+        f"Submitted datetime: {from_datetime.astimezone(UTC)}-{to_datetime.astimezone(UTC)}"
+    )
+    logging.info(
+        f"Submitted datetime: {from_datetime.astimezone(JST)}-{to_datetime.astimezone(JST)}"
+    )
+
+    for feed in fetch_paper_feeds(args.category, from_datetime, to_datetime):
+        post = feed_to_post(feed)
+        logging.info(f"Post: {post}")
+        if args.webhook is not None:
+            response = Slack(url=args.webhook).notify(text=post)
+            logging.info(f"Response: {response}")

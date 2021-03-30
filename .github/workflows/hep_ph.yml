@@ -30,4 +30,4 @@ jobs:
       - name: Run main.py
         run: |
           date
-          python3 main.py --webhook $WEBHOOK --category $CATEGORY --date $(date '+%Y%m%d')
+          python3 main.py --webhook $WEBHOOK --category $CATEGORY
