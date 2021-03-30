@@ -165,8 +165,6 @@ def feed_to_post(feed) -> str:
 
 
 if __name__ == "__main__":
-    DELAY = timedelta(days=0)
-
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
@@ -184,7 +182,7 @@ if __name__ == "__main__":
     else:
         posted_date = datetime.fromisoformat(args.date + "+00:00")
 
-    announced_date = latest_announced_date(posted_date - DELAY)
+    announced_date = latest_announced_date(posted_date)
     from_datetime, to_datetime = get_submitted_date_range(announced_date)
 
     logging.info(f"Posted datetime: {posted_date.astimezone(UTC)}")
