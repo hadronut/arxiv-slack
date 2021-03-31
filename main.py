@@ -15,7 +15,7 @@ from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
-__version__ = "0.0.32"
+__version__ = "0.0.33"
 
 UTC = timezone.utc
 JST = timezone(timedelta(hours=9), "JST")
@@ -168,8 +168,12 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--category", required=True, help="query to specify category")
-    parser.add_argument("-d", "--date", required=False, help="current UTC time in ISO format")
+    parser.add_argument(
+        "-c", "--category", required=True, help="query to specify category"
+    )
+    parser.add_argument(
+        "-d", "--date", required=False, help="current UTC time in ISO format"
+    )
     parser.add_argument("-w", "--webhook", required=False, help="Slack webhook URL")
     args = parser.parse_args()
 
@@ -195,6 +199,12 @@ if __name__ == "__main__":
     logging.info(
         f"Submitted datetime: {from_datetime.astimezone(JST)}-{to_datetime.astimezone(JST)}"
     )
+
+    post = f"New submissions for {announced_date.astimezone(EST).date().isoformat()}"
+    logging.info(f"Post: {post}")
+    if args.webhook is not None:
+        response = Slack(url=args.webhook).notify(text=post)
+        logging.info(f"Response: {response}")
 
     for feed in fetch_paper_feeds(args.category, from_datetime, to_datetime):
         post = feed_to_post(feed)
