@@ -15,7 +15,7 @@ from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
-__version__ = "0.0.33"
+__version__ = "0.0.34"
 
 UTC = timezone.utc
 JST = timezone(timedelta(hours=9), "JST")
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         f"Submitted datetime: {from_datetime.astimezone(JST)}-{to_datetime.astimezone(JST)}"
     )
 
-    post = f"New submissions for {announced_date.astimezone(EST).date().isoformat()}"
+    post = f"New submissions for {announced_date.astimezone(JST).date().isoformat()}"
     logging.info(f"Post: {post}")
     if args.webhook is not None:
         response = Slack(url=args.webhook).notify(text=post)
