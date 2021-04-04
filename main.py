@@ -15,7 +15,7 @@ from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
-__version__ = "0.0.34"
+__version__ = "0.0.35"
 
 UTC = timezone.utc
 JST = timezone(timedelta(hours=9), "JST")
