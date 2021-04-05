@@ -1,4 +1,4 @@
-arxiv
+arxiv==0.5.4
 pandas
 slackweb
 tenacity
