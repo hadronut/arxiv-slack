@@ -9,7 +9,6 @@ from datetime import timezone
 from datetime import tzinfo
 
 import arxiv
-from pandas.tseries.offsets import BusinessDay
 from slackweb import Slack
 from tenacity import retry
 from tenacity import stop_after_attempt
