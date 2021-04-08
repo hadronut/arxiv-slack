@@ -9,13 +9,10 @@ from datetime import timezone
 from datetime import tzinfo
 
 import arxiv
-from pandas.tseries.offsets import BusinessDay
 from slackweb import Slack
 from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
-
-__version__ = "0.0.35"
 
 UTC = timezone.utc
 JST = timezone(timedelta(hours=9), "JST")
@@ -177,7 +174,6 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--webhook", required=False, help="Slack webhook URL")
     args = parser.parse_args()
 
-    logging.info(f"version: {__version__}")
     logging.info(f"Current datetime: {datetime.now(tz=UTC)}")
     logging.info(f"Current datetime: {datetime.now(tz=JST)}")
 
