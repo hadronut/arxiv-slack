@@ -7,8 +7,6 @@ import arxiv
 import slackweb
 import tenacity
 
-__version__ = "0.0.35"
-
 UTC = dt.timezone.utc
 JST = dt.timezone(dt.timedelta(hours=9), "JST")
 EST = dt.timezone(dt.timedelta(hours=-5), "EST")
@@ -173,7 +171,6 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--webhook", required=False, help="Slack webhook URL")
     args = parser.parse_args()
 
-    logging.info(f"version: {__version__}")
     logging.info(f"Current datetime: {dt.datetime.now(tz=UTC)}")
     logging.info(f"Current datetime: {dt.datetime.now(tz=JST)}")
 
