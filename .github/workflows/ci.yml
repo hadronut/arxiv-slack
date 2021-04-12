@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+      branches:
+      - main
+      - develop
+
+  pull_request:
+      branches:
+      - main
+      - develop
+
+  workflow_dispatch:
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        category: ['hep-lat', 'hep-ph', 'hep-th', 'nucl-th', 'q-fin.*']
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install requirements
+      run: python3 -m pip install -r requirements.txt
+    
+    - name: Run doctest
+      run: python3 -m pytest --doctest-modules
+      if: always()
+
+    - name: Run main.py
+      run: python3 main.py --category ${{ matrix.category }}
+      if: always()
